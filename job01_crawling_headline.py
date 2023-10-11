@@ -9,7 +9,7 @@ url = 'https://news.naver.com/main/main.naver?mode=LSD&mid=shm&sid1=100'
 
 # df_titles = pd.DataFrame()
 headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"}
-# resp = requests.get(url, headers=headers)
+# resp = requests.get(url, headers=headers)     ##requests - 웹에서 받는 객체
 # # print(list(resp))
 # print(type(resp))
 # soup = BeautifulSoup(resp.text,'html.parser')
@@ -28,4 +28,17 @@ df_titles = pd.DataFrame()
 re_title = re.compile('[^가-힣]|a-z|A-Z')
 
 for i in range(6):
-    resp = requests.get('https://news.naver.com/main/main.naver?mode=LSD&mid=shm&sid1=10{}'.format(i),)
+    resp = requests.get('https://news.naver.com/main/main.naver?mode=LSD&mid=shm&sid1=10{}'.format(i), headers = headers)
+    soup = BeautifulSoup(resp.text, 'html.parser')
+    title_tags = soup.select('.sh_text_headline')
+    titles = []
+    for title_tags in title_tags:
+        titles.append(re.compile('[^가-힣|a-z|A-Z]').sub(' ', title_tags.text))   ##re.compile('[^가-힣|a-z|A-Z]') --> re_title로 사용가능
+    df_section_titles = pd.DataFrame(titles, columns=['titles'])
+    df_section_titles['category'] = category[i]
+    df_titles = pd.concat([df_titles, df_section_titles], axis='rows', ignore_index=True)
+
+print(df_titles.head())
+df_titles.info()
+print(df_titles['category'].value_counts())
+df_titles.to_csv('./crawling_data/naver_headline_news_{}.csv'.format(datetime.datetime.now().strftime('%Y%m%d')), index=False)
